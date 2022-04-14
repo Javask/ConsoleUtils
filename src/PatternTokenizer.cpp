@@ -1,11 +1,7 @@
 #include "PatternTokenizer.h"
 #include "StringUtils.h"
+#include "TokenUtils.h"
 #include <stdexcept>
-
-const std::regex PatternTokenizer::paramNameRegex =
-    std::regex("[[:alpha:]][\\w_-]*");
-const std::regex PatternTokenizer::optionNameRegex =
-    std::regex("-+\\w[\\w_-]*");
 
 // TODO Refactor this mess
 std::vector<PatternToken> PatternTokenizer::tokenize(
@@ -113,28 +109,4 @@ std::vector<PatternToken> PatternTokenizer::tokenize(
     inOptional = (startOptional && !endOptional);
   }
   return outVector;
-}
-
-bool PatternTokenizer::isValidOptionName(const std::string& val) {
-  return std::regex_match(val, optionNameRegex);
-}
-
-bool PatternTokenizer::isValidParamName(const std::string& val) {
-  return std::regex_match(val, paramNameRegex);
-}
-
-bool PatternTokenizer::isOptional(const std::string& val) {
-  return val.size() >= 3 && val[0] == '[' && val[val.size() - 1] == ']';
-}
-
-bool PatternTokenizer::isOption(const std::string& val) {
-  if (!(val.size() >= 2 && val[0] == '-')) return false;
-  for (size_t i = 1; i < val.size(); i++) {
-    if (val[i] != '-') return true;
-  }
-  return false;
-}
-
-bool PatternTokenizer::isArgType(const std::string& val) {
-  return val.size() >= 3 && val[0] == '<' && val[val.size() - 1] == '>';
 }

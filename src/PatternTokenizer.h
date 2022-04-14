@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <regex>
+#include <vector>
 #include "PatternToken.h"
 
 /* Pattern definition:
@@ -28,16 +28,4 @@ class PatternTokenizer {
 
  public:
   static std::vector<PatternToken> tokenize(const std::string& pattern);
-
- private:
-  static bool isOptional(const std::string& val);
-  static bool isOption(const std::string& val);
-
-  static bool isArgType(const std::string& val);
-
-  static bool isValidParamName(const std::string& val);
-  static bool isValidOptionName(const std::string& val);
-
-  static const std::regex paramNameRegex;
-  static const std::regex optionNameRegex;
 };

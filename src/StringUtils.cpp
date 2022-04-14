@@ -38,3 +38,38 @@ std::vector<std::string> splitAtSpaces(const std::string& val) {
   }
   return substrings;
 }
+
+std::vector<std::string> splitAtSpacesWithEscape(const std::string& val) {
+  auto substrings = std::vector<std::string>();
+  size_t lastSpace = 0;
+  bool escape = false;
+  bool inStringDQ = false;
+  bool inStringSQ = false;
+  for (size_t i = 0; i < val.size(); i++) {
+    if (val[i] == '"' && !inStringSQ && !escape) {
+      inStringDQ = !inStringDQ;
+    }
+    if (val[i] == '\'' && !escape) {
+      inStringSQ = !inStringSQ;
+    }
+
+    if (val[i] == ' ' && !inStringDQ && !inStringSQ && !escape) {
+      if (lastSpace != i) {
+        substrings.push_back(val.substr(lastSpace, i - lastSpace));
+      }
+      lastSpace = i + 1;
+    }
+
+    if (val[i] == '\\')
+      escape = true;
+    else
+      escape = false;
+  }
+  if (lastSpace < val.size()) {
+    substrings.push_back(val.substr(lastSpace, val.size() - lastSpace));
+  }
+  if (inStringDQ || inStringSQ) {
+    throw std::invalid_argument("Open quote in string!");
+  }
+  return substrings;
+}
