@@ -1,4 +1,5 @@
 #include "PatternTokenizer.h"
+#include "StringUtils.h"
 #include <stdexcept>
 
 const std::regex PatternTokenizer::paramNameRegex =
@@ -112,55 +113,6 @@ std::vector<PatternToken> PatternTokenizer::tokenize(
     inOptional = (startOptional && !endOptional);
   }
   return outVector;
-}
-
-std::string PatternTokenizer::removeFirstAndLastChar(const std::string& val) {
-  return val.substr(1, val.size() - 2);
-}
-
-std::string PatternTokenizer::removeFirstChar(const std::string& val) {
-  return val.substr(1, val.size() - 1);
-}
-
-std::string PatternTokenizer::removeLastChar(const std::string& val) {
-  return val.substr(0, val.size() - 1);
-}
-
-std::vector<std::string> PatternTokenizer::splitAtSpaces(
-    const std::string& val) {
-  const char space = ' ';
-  auto substrings = std::vector<std::string>();
-  size_t lastSpace = 0;
-  for (size_t i = 0; i < val.size(); i++) {
-    if (val[i] == space) {
-      if (lastSpace != i) {
-        substrings.push_back(val.substr(lastSpace, i - lastSpace));
-      }
-      lastSpace = i + 1;
-    }
-  }
-  if (lastSpace < val.size()) {
-    substrings.push_back(val.substr(lastSpace, val.size() - lastSpace));
-  }
-  return substrings;
-}
-
-ArgType PatternTokenizer::toArgType(const std::string& val) {
-  if (val == "string") {
-    return ArgType::String;
-  } else if (val == "int") {
-    return ArgType::Integer;
-  } else if (val == "real") {
-    return ArgType::Real;
-  } else if (val == "+int") {
-    return ArgType::PositiveInteger;
-  } else if (val == "+real") {
-    return ArgType::PositiveReal;
-  } else if (val == "bool") {
-    return ArgType::Boolean;
-  } else {
-    return ArgType::None;
-  }
 }
 
 bool PatternTokenizer::isValidOptionName(const std::string& val) {

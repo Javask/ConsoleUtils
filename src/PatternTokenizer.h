@@ -34,15 +34,9 @@ class PatternTokenizer {
   static bool isOption(const std::string& val);
 
   static bool isArgType(const std::string& val);
-  static ArgType toArgType(const std::string& val);
 
   static bool isValidParamName(const std::string& val);
   static bool isValidOptionName(const std::string& val);
-
-  static std::vector<std::string> splitAtSpaces(const std::string& val);
-  static std::string removeFirstAndLastChar(const std::string& val);
-  static std::string removeFirstChar(const std::string& val);
-  static std::string removeLastChar(const std::string& val);
 
   static const std::regex paramNameRegex;
   static const std::regex optionNameRegex;

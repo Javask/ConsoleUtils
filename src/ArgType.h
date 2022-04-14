@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 enum class ArgType {
   String,
   Real,
@@ -8,3 +10,5 @@ enum class ArgType {
   Boolean,
   None
 };
+
+ArgType toArgType(const std::string& val);
