@@ -1,5 +1,6 @@
 #include "StringUtils.h"
 #include <algorithm>
+#include <regex>
 
 std::string toLowerCase(const std::string& val) {
   std::string data = val;
@@ -7,6 +8,20 @@ std::string toLowerCase(const std::string& val) {
     return static_cast<char>(std::tolower(static_cast<int>(c)));
   });
   return data;
+}
+
+bool isInteger(const std::string& val, bool allowNegative) {
+  auto regString = std::string("\\s*") + (allowNegative ? "(\\+|-)?" : "\\+?") +
+                   "[[:digit:]]+\\s*";
+  auto intRegex = std::regex(regString);
+  return std::regex_match(val, intRegex);
+}
+
+bool isReal(const std::string& val, bool allowNegative) {
+  auto regString = std::string("\\s*") + (allowNegative ? "(\\+|-)?" : "\\+?") +
+                   "([[:digit:]]+(\\.[[:digit:]]+)?|\\.[[:digit:]]+)\\s*";
+  auto realRegex = std::regex(regString);
+  return std::regex_match(val, realRegex);
 }
 
 std::string removeFirstAndLastChar(const std::string& val) {

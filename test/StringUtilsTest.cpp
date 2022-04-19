@@ -80,3 +80,37 @@ TEST_CASE("Split strings with escape") {
   REQUIRE_THROWS(splitAtSpacesWithEscape("test1\""));
   REQUIRE_THROWS(splitAtSpacesWithEscape("test1\'"));
 }
+
+TEST_CASE("Test is Integer") {
+  REQUIRE(isInteger("0", true));
+  REQUIRE(isInteger("0", false));
+  REQUIRE(isInteger("1", true));
+  REQUIRE(isInteger("1", false));
+  REQUIRE(isInteger("123"));
+  REQUIRE(!isInteger("123a"));
+  REQUIRE(isInteger("-1", true));
+  REQUIRE(!isInteger("-1", false));
+  REQUIRE(!isInteger("0.0", true));
+  REQUIRE(isInteger("+1", false));
+  REQUIRE(!isInteger(""));
+  REQUIRE(!isInteger("a"));
+}
+TEST_CASE("Test is Real") {
+  REQUIRE(isReal("0"));
+  REQUIRE(isReal("0.0"));
+  REQUIRE(isReal("1.0"));
+  REQUIRE(isReal("10.0"));
+  REQUIRE(isReal("-10.0"));
+  REQUIRE(isReal("+10.0"));
+  REQUIRE(isReal("0.5"));
+  REQUIRE(isReal(".5"));
+  REQUIRE(isReal("-.5"));
+  REQUIRE(!isReal(""));
+  REQUIRE(!isReal("a"));
+  REQUIRE(!isReal("0.a"));
+  REQUIRE(!isReal("a.0"));
+  REQUIRE(!isReal("0a0"));
+
+  REQUIRE(!isReal("-1.0", false));
+  REQUIRE(isReal("1.0", true));
+}
