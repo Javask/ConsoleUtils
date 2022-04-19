@@ -14,6 +14,8 @@
   arg_types: string, [+]real, [+]int, bool
 
 Notes:
+  Options are position agnostic, can be switched around
+  Only named parameters are order sensitive
   arg_type string: cannot contain spaces unless surrounded in quotes
   arg_type bool: accept values true/false, ignore case!
   arg_type int/real: [+] restricts to positive values
