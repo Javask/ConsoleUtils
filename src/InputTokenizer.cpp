@@ -3,30 +3,161 @@
 #include "TokenUtils.h"
 #include <stdexcept>
 
-InputTokens InputTokenizer::tokenize(const std::string& input,
-                                     std::vector<PatternToken>& pattern) {
-  InputTokens outTokens;
+bool InputTokenizer::splitIsHelp(std::string& split) {
+  return split == "--help" || split == "-?";
+}
+
+std::vector<size_t> InputTokenizer::getMandatoryParamCounts(
+    const std::vector<Parameter>& params) {
+  size_t count = 0;
+  std::vector<size_t> counts = std::vector<size_t>(params.size());
+  for (size_t i = 0; i < params.size(); i++) {
+    counts[i] = count;
+    if (!params[i].optional) count++;
+  }
+  return counts;
+}
+
+std::optional<InputTokens> InputTokenizer::tokenize(
+    const std::vector<PatternToken>& pattern, const std::string& input) {
+  InputTokens output;
+
+  auto parameters = getPatternParameters(pattern);
+  auto requiredParamCounts = getMandatoryParamCounts(parameters);
+  auto options = getPatternOptions(pattern);
   auto splits = splitAtSpacesWithEscape(input);
-  auto tokenizer = InputTokenizer(pattern);
+
+  std::string previousSplit = "";
+  ArgType needsArgument = ArgType::None;
+
+  std::vector<std::string> parameterSplits;
+
   for (size_t i = 0; i < splits.size(); i++) {
     auto split = splits[i];
-    auto matchedToken = tokenizer.matchNextToken(splits[i]);
-    if (!matchedToken) {
-      throw std::invalid_argument(tokenizer.getError());
+    if (splitIsHelp(split)) {
+      output.clear();
+      output.emplace(split, std::vector<std::string>());
+      return output;
     }
-    outTokens[matchedToken->name].push_back(split);
+    if (options.contains(split)) {
+      auto& opt = options[split];
+      output.emplace(split, std::vector<std::string>());
+      if (opt != ArgType::None) {
+        needsArgument = opt;
+      }
+    } else if (needsArgument != ArgType::None) {
+      if (matchesArgType(needsArgument, split)) {
+        output[previousSplit].push_back(split);
+        needsArgument = ArgType::None;
+      } else {
+        throw std::invalid_argument("Invalid argument for option " +
+                                    previousSplit + "!");
+        return {};
+      }
+    } else {
+      parameterSplits.push_back(split);
+    }
+    previousSplit = split;
   }
-  return outTokens;
+  if (needsArgument != ArgType::None) {
+    throw std::invalid_argument("No argument found for option " +
+                                previousSplit + "!");
+    return {};
+  }
+  for (auto& paramSplit : parameterSplits) {
+    if (isValidOptionName(paramSplit))
+      throw std::invalid_argument("Invalid option " + paramSplit + " !");
+  }
+
+  output = getParameterAssignments(parameters, parameterSplits, output);
+  return output;
 }
 
-std::string InputTokenizer::getError() {
-  return "";  // TODO implement
+InputTokens& InputTokenizer::getParameterAssignments(
+    const std::vector<Parameter>& parameterTokens,
+    const std::vector<std::string>& parameterSplits, InputTokens& output) {
+  auto usedParameters = std::vector<Parameter>();
+  for (auto& paramToken : parameterTokens) {
+    if (!paramToken.optional) usedParameters.push_back(paramToken);
+  }
+
+  if (usedParameters.size() > parameterSplits.size())
+    throw std::invalid_argument("Not enough parameters!");
+  for (size_t i = 0; i < parameterTokens.size() &&
+                     usedParameters.size() != parameterSplits.size();
+       i++) {
+    auto currToken = parameterTokens[i];
+    if (currToken.optional && !currToken.multiple) {
+      usedParameters.insert(usedParameters.begin() + i, currToken);
+    } else if (currToken.optional) {
+      size_t diff = parameterSplits.size() - usedParameters.size();
+      for (size_t j = 0; j < diff; j++) {
+        usedParameters.insert(usedParameters.begin() + i, currToken);
+      }
+    }
+  }
+  if (usedParameters.size() != parameterSplits.size())
+    throw std::invalid_argument("Not enough parameters!");
+
+  for (size_t i = 0; i < usedParameters.size(); i++) {
+    output[usedParameters[i].name].push_back(parameterSplits[i]);
+  }
+  return output;
 }
 
-std::optional<PatternToken> InputTokenizer::matchNextToken(
-    const std::string& input) {
-  return {};  // TODO implement
+std::vector<InputTokenizer::Parameter> InputTokenizer::getPatternParameters(
+    const std::vector<PatternToken>& pattern) {
+  std::vector<InputTokenizer::Parameter> parameters;
+  bool hasMultiple = false;
+  for (size_t i = 0; i < pattern.size(); i++) {
+    auto& currToken = pattern[i];
+    if (!currToken.option) {
+      Parameter param;
+      param.multiple = currToken.canBeMultiple;
+      param.name = currToken.name;
+      param.optional = currToken.isOptional;
+
+      if (hasMultiple && (currToken.canBeMultiple || currToken.isOptional))
+        throw std::invalid_argument("Indistinguishable parameters in pattern!");
+
+      if (currToken.canBeMultiple) hasMultiple = true;
+
+      parameters.push_back(param);
+    }
+  }
+  return parameters;
 }
 
-InputTokenizer::InputTokenizer(const std::vector<PatternToken>& tokens)
-    : tokens(tokens) {}
+std::unordered_map<std::string, ArgType> InputTokenizer::getPatternOptions(
+    const std::vector<PatternToken>& pattern) {
+  std::unordered_map<std::string, ArgType> options;
+  for (size_t i = 0; i < pattern.size(); i++) {
+    auto& currToken = pattern[i];
+    if (currToken.option) {
+      options.emplace(currToken.name, currToken.argtype);
+    }
+  }
+  return options;
+}
+
+bool InputTokenizer::matchesArgType(ArgType type, std::string& split) {
+  auto toLower = toLowerCase(split);
+  switch (type) {
+    case ArgType::None:
+      return false;
+    case ArgType::String:
+      return true;
+    case ArgType::Integer:
+      return isInteger(split);
+    case ArgType::Real:
+      return isReal(split);
+    case ArgType::PositiveInteger:
+      return isInteger(split, false);
+    case ArgType::PositiveReal:
+      return isReal(split, false);
+    case ArgType::Boolean:
+      return toLower == "false" || toLower == "true";
+    default:
+      return false;
+  }
+}

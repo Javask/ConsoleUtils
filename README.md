@@ -12,6 +12,7 @@ The interface will be designed from a pattern with descriptions for all paramete
 
 >Names may not contain spaces! 
 >arg_types are: string, [+]real, [+]int, bool 
+>If there are multiple optional parameters they will be filled from left to right
 
 Example Pattern: 
 

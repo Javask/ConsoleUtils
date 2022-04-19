@@ -5,19 +5,35 @@
 #include <optional>
 #include <unordered_map>
 
+// TODO change to throw instead of setError, rename refinematch to compute
+
 typedef std::unordered_map<std::string, std::vector<std::string>> InputTokens;
 
 class InputTokenizer {
  private:
-  InputTokenizer(const std::vector<PatternToken>& tokens);
+  InputTokenizer() = default;
   ~InputTokenizer() = default;
 
  public:
-  static InputTokens tokenize(const std::string& input,
-                              std::vector<PatternToken>& pattern);
-  std::string getError();
+  static std::optional<InputTokens> tokenize(
+      const std::vector<PatternToken>& pattern, const std::string& input);
 
  private:
-  std::optional<PatternToken> matchNextToken(const std::string& input);
-  const std::vector<PatternToken> tokens;
+  struct Parameter {
+    std::string name;
+    bool optional;
+    bool multiple;
+  };
+
+  static InputTokens& getParameterAssignments(
+      const std::vector<Parameter>& parameterTokens,
+      const std::vector<std::string>& parameterSplits, InputTokens& output);
+  static std::vector<Parameter> getPatternParameters(
+      const std::vector<PatternToken>& pattern);
+  static std::unordered_map<std::string, ArgType> getPatternOptions(
+      const std::vector<PatternToken>& pattern);
+  static bool matchesArgType(ArgType type, std::string& split);
+  static bool splitIsHelp(std::string& split);
+  static std::vector<size_t> getMandatoryParamCounts(
+      const std::vector<Parameter>& params);
 };
