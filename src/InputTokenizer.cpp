@@ -18,8 +18,8 @@ std::vector<size_t> InputTokenizer::getMandatoryParamCounts(
   return counts;
 }
 
-std::optional<InputTokens> InputTokenizer::tokenize(
-    const std::vector<PatternToken>& pattern, const std::string& input) {
+InputTokens InputTokenizer::tokenize(const std::vector<PatternToken>& pattern,
+                                     const std::string& input) {
   InputTokens output;
 
   auto parameters = getPatternParameters(pattern);
@@ -52,7 +52,6 @@ std::optional<InputTokens> InputTokenizer::tokenize(
       } else {
         throw std::invalid_argument("Invalid argument for option " +
                                     previousSplit + "!");
-        return {};
       }
     } else {
       parameterSplits.push_back(split);
@@ -62,7 +61,6 @@ std::optional<InputTokens> InputTokenizer::tokenize(
   if (needsArgument != ArgType::None) {
     throw std::invalid_argument("No argument found for option " +
                                 previousSplit + "!");
-    return {};
   }
   for (auto& paramSplit : parameterSplits) {
     if (isValidOptionName(paramSplit))

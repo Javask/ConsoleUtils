@@ -15,8 +15,8 @@ class InputTokenizer {
   ~InputTokenizer() = default;
 
  public:
-  static std::optional<InputTokens> tokenize(
-      const std::vector<PatternToken>& pattern, const std::string& input);
+  static InputTokens tokenize(const std::vector<PatternToken>& pattern,
+                              const std::string& input);
 
  private:
   struct Parameter {
