@@ -1,5 +1,4 @@
 #pragma once
-#include "InputToken.h"
 #include "PatternToken.h"
 #include <vector>
 #include <string>
