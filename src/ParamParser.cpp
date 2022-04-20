@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include "TokenUtils.h"
+#include "Discovery.h"
 
 ParamParser::ParamParser(ParamPattern pattern,
                          std::vector<ParamDescription> params)
@@ -15,7 +16,6 @@ ParamResult ParamParser::parse(int argc, char** argv) {
   if (argc < 1) {
     throw std::invalid_argument("argc == 0 should not be possible!");
   }
-  std::string arg0 = std::string(argv[0]);
   std::stringstream stream;
   for (int i = 1; i < argc; i++) {
     stream << argv[i] << " ";
@@ -25,32 +25,33 @@ ParamResult ParamParser::parse(int argc, char** argv) {
   try {
     patternTokens = PatternTokenizer::tokenize(pattern);
   } catch (std::invalid_argument& arg) {
-    printException(arg, arg0);
+    printException(arg);
     throw arg;
   }
   InputTokens tokens;
   try {
     tokens = InputTokenizer::tokenize(patternTokens, input);
   } catch (std::invalid_argument& arg) {
-    printException(arg, arg0);
+    printException(arg);
     throw arg;
   }
   if (tokens.contains("--help") || tokens.contains("-?")) {
-    printHelp(arg0);
+    printHelp();
     return ParamResult::createResultShouldExit();
   }
   return ParamResult::create(tokens);
 }
 
-void ParamParser::printException(std::exception& e, const std::string& arg0) {
+void ParamParser::printException(std::exception& e) {
   if (console) {
     *console << e.what() << "\n";
-    printHelp(arg0);
+    printHelp();
   }
 }
 
-void ParamParser::printHelp(const std::string& arg0) {
+void ParamParser::printHelp() {
   if (console) {
+    auto arg0 = Discovery::getExecutablePath().filename().generic_string();
     *console << "Usage: " << arg0 << " " << pattern << "\n";
     size_t optionNameLength = 0;
     size_t paramNameLength = 0;

@@ -19,10 +19,10 @@ class ParamParser {
   ~ParamParser() = default;
   void setOutput(std::ostream* os);
   ParamResult parse(int argc, char** argv);
+  void printHelp();
 
  private:
-  void printException(std::exception& e, const std::string& arg0);
-  void printHelp(const std::string& arg0);
+  void printException(std::exception& e);
   ParamPattern pattern;
   std::vector<ParamDescription> descriptions;
   std::ostream* console = &std::cout;
