@@ -28,12 +28,17 @@ class InputTokenizer {
   static InputTokens& getParameterAssignments(
       const std::vector<Parameter>& parameterTokens,
       const std::vector<std::string>& parameterSplits, InputTokens& output);
+
   static std::vector<Parameter> getPatternParameters(
       const std::vector<PatternToken>& pattern);
+
   static std::unordered_map<std::string, ArgType> getPatternOptions(
       const std::vector<PatternToken>& pattern);
+
   static bool matchesArgType(ArgType type, std::string& split);
+
   static bool splitIsHelp(std::string& split);
+
   static std::vector<size_t> getMandatoryParamCounts(
       const std::vector<Parameter>& params);
 };

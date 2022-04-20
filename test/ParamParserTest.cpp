@@ -9,6 +9,7 @@ TEST_CASE("test param parser") {
   descriptions1[0].name = "name1";
   descriptions1[0].description = "test";
   auto parser = ParamParser(pattern1, descriptions1);
+  parser.setOutput(nullptr);
   std::string testname0 = "consolename";
   std::string testname1 = "a";
   char** input = new char*[2];
@@ -18,8 +19,11 @@ TEST_CASE("test param parser") {
   input[1] = val1;
   REQUIRE_THROWS(parser.parse(0, input));
   REQUIRE_THROWS(parser.parse(1, input));
-  ParamResult res;
-  REQUIRE_NOTHROW(res = parser.parse(2, input));
+  ParamResult paramRes = ParamResult::createResultShouldExit();
+  ParameterValues res;
+  REQUIRE_NOTHROW(paramRes = parser.parse(2, input));
+  REQUIRE(!paramRes.shouldExit());
+  res = paramRes.getValues();
   REQUIRE(res.size() == 1);
   REQUIRE(res.contains("name1"));
   REQUIRE(res["name1"].size() == 1);

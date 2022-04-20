@@ -3,15 +3,19 @@
 #include "InputTokenizer.h"
 #include <sstream>
 #include <iostream>
+#include "TokenUtils.h"
 
 ParamParser::ParamParser(ParamPattern pattern,
                          std::vector<ParamDescription> params)
     : pattern(pattern), descriptions(params) {}
 
+void ParamParser::setOutput(std::ostream* os) { console = os; }
+
 ParamResult ParamParser::parse(int argc, char** argv) {
   if (argc < 1) {
     throw std::invalid_argument("argc == 0 should not be possible!");
   }
+  std::string arg0 = std::string(argv[0]);
   std::stringstream stream;
   for (int i = 1; i < argc; i++) {
     stream << argv[i] << " ";
@@ -20,26 +24,63 @@ ParamResult ParamParser::parse(int argc, char** argv) {
   std::vector<PatternToken> patternTokens;
   try {
     patternTokens = PatternTokenizer::tokenize(pattern);
-  } catch (std::invalid_argument arg) {
-    std::cout << arg.what() << std::endl;
-    printHelp();
+  } catch (std::invalid_argument& arg) {
+    printException(arg, arg0);
     throw arg;
   }
   InputTokens tokens;
   try {
     tokens = InputTokenizer::tokenize(patternTokens, input);
-  } catch (std::invalid_argument arg) {
-    std::cout << arg.what() << std::endl;
-    printHelp();
+  } catch (std::invalid_argument& arg) {
+    printException(arg, arg0);
     throw arg;
   }
   if (tokens.contains("--help") || tokens.contains("-?")) {
-    printHelp();
-    return ParamResult();
+    printHelp(arg0);
+    return ParamResult::createResultShouldExit();
   }
-  return tokens;
+  return ParamResult::create(tokens);
 }
 
-void ParamParser::printHelp() {
-  // TODO
+void ParamParser::printException(std::exception& e, const std::string& arg0) {
+  if (console) {
+    *console << e.what() << "\n";
+    printHelp(arg0);
+  }
+}
+
+void ParamParser::printHelp(const std::string& arg0) {
+  if (console) {
+    *console << "Usage: " << arg0 << " " << pattern << "\n";
+    size_t optionNameLength = 0;
+    size_t paramNameLength = 0;
+    std::vector<ParamDescription> options, params;
+    for (auto& desc : descriptions) {
+      if (isValidOptionName(desc.name)) {
+        if (desc.name.size() > optionNameLength)
+          optionNameLength = desc.name.size();
+        options.push_back(desc);
+      } else {
+        if (desc.name.size() > paramNameLength)
+          paramNameLength = desc.name.size();
+        params.push_back(desc);
+      }
+    }
+    *console << "Parameters:\n";
+    for (auto& param : params) {
+      size_t padding = paramNameLength - param.name.size();
+      *console << "\t" << param.name << ": ";
+      for (size_t i = 0; i < padding; i++) *console << " ";
+      *console << param.description << "\n";
+    }
+    *console << "\nOptions:\n";
+    for (auto& option : options) {
+      size_t padding = optionNameLength - option.name.size();
+      *console << "\t" << option.name << ": ";
+      for (size_t i = 0; i < padding; i++) *console << " ";
+      *console << option.description << "\n";
+    }
+
+    *console << std::endl;
+  }
 }
