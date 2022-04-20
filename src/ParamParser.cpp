@@ -52,7 +52,7 @@ void ParamParser::printException(std::exception& e) {
 void ParamParser::printHelp() {
   if (console) {
     auto arg0 = Discovery::getExecutablePath().filename().generic_string();
-    *console << "Usage: " << arg0 << " " << pattern << "\n";
+    *console << "Usage: " << arg0 << " " << pattern;
     size_t optionNameLength = 0;
     size_t paramNameLength = 0;
     std::vector<ParamDescription> options, params;
@@ -67,21 +67,24 @@ void ParamParser::printHelp() {
         params.push_back(desc);
       }
     }
-    *console << "Parameters:\n";
-    for (auto& param : params) {
-      size_t padding = paramNameLength - param.name.size();
-      *console << "\t" << param.name << ": ";
-      for (size_t i = 0; i < padding; i++) *console << " ";
-      *console << param.description << "\n";
+    if (!params.empty()) {
+      *console << "\nParameters:\n";
+      for (auto& param : params) {
+        size_t padding = paramNameLength - param.name.size();
+        *console << "\t" << param.name << ": ";
+        for (size_t i = 0; i < padding; i++) *console << " ";
+        *console << param.description << "\n";
+      }
     }
-    *console << "\nOptions:\n";
-    for (auto& option : options) {
-      size_t padding = optionNameLength - option.name.size();
-      *console << "\t" << option.name << ": ";
-      for (size_t i = 0; i < padding; i++) *console << " ";
-      *console << option.description << "\n";
+    if (!options.empty()) {
+      *console << "\nOptions:\n";
+      for (auto& option : options) {
+        size_t padding = optionNameLength - option.name.size();
+        *console << "\t" << option.name << ": ";
+        for (size_t i = 0; i < padding; i++) *console << " ";
+        *console << option.description << "\n";
+      }
     }
-
     *console << std::endl;
   }
 }
