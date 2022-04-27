@@ -1,4 +1,6 @@
 #include "ArgType.h"
+
+namespace ConsoleUtils {
 ArgType toArgType(const std::string& val) {
   if (val == "string") {
     return ArgType::String;
@@ -16,3 +18,4 @@ ArgType toArgType(const std::string& val) {
     return ArgType::None;
   }
 }
+}  // namespace ConsoleUtils

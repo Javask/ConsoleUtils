@@ -3,6 +3,8 @@
 #include <vector>
 #include "PatternToken.h"
 
+namespace ConsoleUtils {
+
 /* Pattern definition:
   Names may not contain spaces!
   name Required parameter
@@ -31,3 +33,5 @@ class PatternTokenizer {
  public:
   static std::vector<PatternToken> tokenize(const std::string& pattern);
 };
+
+}  // namespace ConsoleUtils

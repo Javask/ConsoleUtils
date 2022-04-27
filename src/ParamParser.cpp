@@ -6,6 +6,8 @@
 #include "TokenUtils.h"
 #include "Discovery.h"
 
+namespace ConsoleUtils {
+
 ParamParser::ParamParser(ParamPattern pattern,
                          std::vector<ParamDescription> params)
     : pattern(pattern), descriptions(params) {}
@@ -88,3 +90,4 @@ void ParamParser::printHelp() {
     *console << std::endl;
   }
 }
+}  // namespace ConsoleUtils

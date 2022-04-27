@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+namespace ConsoleUtils {
+
 typedef std::unordered_map<std::string, std::vector<std::string>>
     ParameterValues;
 
@@ -19,3 +21,5 @@ class ParamResult {
   ParameterValues values;
   bool exit;
 };
+
+}  // namespace ConsoleUtils

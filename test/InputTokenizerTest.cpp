@@ -2,6 +2,7 @@
 #include "InputTokenizer.h"
 #include "PatternTokenizer.h"
 
+using namespace ConsoleUtils;
 // TODO make better
 TEST_CASE("Test input tokenization") {
   auto pattern =

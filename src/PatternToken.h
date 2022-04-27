@@ -2,6 +2,8 @@
 #include <string>
 #include "ArgType.h"
 
+namespace ConsoleUtils {
+
 struct PatternToken {
   std::string name = "";
   bool isOptional = false;
@@ -9,3 +11,5 @@ struct PatternToken {
   bool canBeMultiple = false;
   ArgType argtype = ArgType::None;
 };
+
+}  // namespace ConsoleUtils

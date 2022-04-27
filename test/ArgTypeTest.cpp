@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 #include "ArgType.h"
-
+using namespace ConsoleUtils;
 TEST_CASE("String to arg_type conversion") {
   REQUIRE(toArgType("string") == ArgType::String);
   REQUIRE(toArgType("int") == ArgType::Integer);

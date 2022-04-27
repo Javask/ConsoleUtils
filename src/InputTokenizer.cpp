@@ -2,6 +2,7 @@
 #include "StringUtils.h"
 #include "TokenUtils.h"
 #include <stdexcept>
+namespace ConsoleUtils {
 
 bool InputTokenizer::splitIsHelp(std::string& split) {
   return split == "--help" || split == "-?";
@@ -159,3 +160,4 @@ bool InputTokenizer::matchesArgType(ArgType type, std::string& split) {
       return false;
   }
 }
+}  // namespace ConsoleUtils

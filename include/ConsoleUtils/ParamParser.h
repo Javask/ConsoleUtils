@@ -6,6 +6,8 @@
 #include <ostream>
 #include <iostream>
 
+namespace ConsoleUtils {
+
 struct ParamDescription {
   std::string name;
   std::string description;
@@ -27,3 +29,5 @@ class ParamParser {
   std::vector<ParamDescription> descriptions;
   std::ostream* console = &std::cout;
 };
+
+}  // namespace ConsoleUtils

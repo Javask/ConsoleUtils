@@ -3,6 +3,7 @@
 #include "TokenUtils.h"
 #include <stdexcept>
 
+namespace ConsoleUtils {
 // TODO Refactor this mess
 std::vector<PatternToken> PatternTokenizer::tokenize(
     const std::string& pattern) {
@@ -110,3 +111,5 @@ std::vector<PatternToken> PatternTokenizer::tokenize(
   }
   return outVector;
 }
+
+}  // namespace ConsoleUtils

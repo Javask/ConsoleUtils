@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 
+namespace ConsoleUtils {
 enum class ArgType {
   String,
   Real,
@@ -12,3 +13,4 @@ enum class ArgType {
 };
 
 ArgType toArgType(const std::string& val);
+}  // namespace ConsoleUtils

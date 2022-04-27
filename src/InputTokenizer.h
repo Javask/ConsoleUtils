@@ -5,6 +5,7 @@
 #include <optional>
 #include <unordered_map>
 
+namespace ConsoleUtils {
 // TODO change to throw instead of setError, rename refinematch to compute
 
 typedef std::unordered_map<std::string, std::vector<std::string>> InputTokens;
@@ -42,3 +43,4 @@ class InputTokenizer {
   static std::vector<size_t> getMandatoryParamCounts(
       const std::vector<Parameter>& params);
 };
+}  // namespace ConsoleUtils

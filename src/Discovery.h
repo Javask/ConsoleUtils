@@ -1,5 +1,7 @@
 #pragma once
 #include <filesystem>
+
+namespace ConsoleUtils {
 class Discovery {
  private:
   Discovery() = default;
@@ -14,3 +16,4 @@ class Discovery {
   // Returns the Path to the running executable
   static auto getExecutablePath() -> std::filesystem::path;
 };
+}  // namespace ConsoleUtils

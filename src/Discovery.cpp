@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 
+namespace ConsoleUtils {
 bool Discovery::isSet = false;
 
 std::filesystem::path Discovery::executablePath = std::filesystem::path();
@@ -43,3 +44,4 @@ std::filesystem::path Discovery::getExecutablePath() {
   return std::string(FileName, (count > 0) ? count : 0);
 #endif
 }
+}  // namespace ConsoleUtils

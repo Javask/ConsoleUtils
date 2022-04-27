@@ -2,6 +2,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
+using namespace ConsoleUtils;
 TEST_CASE("test param parser") {
   std::string pattern1 = "name1";
   std::vector<ParamDescription> descriptions1 =

@@ -1,6 +1,7 @@
 #include <catch2/catch.hpp>
 #include "PatternTokenizer.h"
 
+using namespace ConsoleUtils;
 TEST_CASE("Test name is option") {
   std::string optionname = "[--test]";
   std::string optionname2 = "[-test]";
