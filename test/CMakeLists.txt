@@ -18,5 +18,4 @@ set_target_properties(ConsoleUtilsTests PROPERTIES CXX_STANDARD 20 COMPILE_OPTIO
 target_include_directories(ConsoleUtilsTests PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../src" "${CMAKE_CURRENT_LIST_DIR}/../include")
 
 
-enable_testing()
-add_test(ConsoleUtilsTests ConsoleUtilsTests)
+add_test(ConsoleUtilsTests ${EXECUTABLE_OUTPUT_PATH}/ConsoleUtilsTests)

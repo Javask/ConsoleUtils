@@ -44,6 +44,7 @@ add_library(ConsoleUtils::ConsoleUtils ALIAS ConsoleUtils)
 
 option(CONSOLEUTILS_BUILD_TESTS "Build ConsoleUtils Tests" ON)
 if(CONSOLEUTILS_BUILD_TESTS)
+  enable_testing()
   add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/test/")
 endif()
 
