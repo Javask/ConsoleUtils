@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "PatternToken.h"
+#include "ConsoleUtils/ArgType.h"
+#include "ConsoleUtils/PatternToken.h"
 
 namespace ConsoleUtils {
 

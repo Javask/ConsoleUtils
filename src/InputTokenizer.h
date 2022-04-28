@@ -1,5 +1,5 @@
 #pragma once
-#include "PatternToken.h"
+#include "ConsoleUtils/PatternToken.h"
 #include <vector>
 #include <string>
 #include <optional>
