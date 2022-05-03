@@ -10,7 +10,7 @@ install(TARGETS ConsoleUtils
 
 install(EXPORT ConsoleUtils-targets
   FILE
-    CConsoleUtilsTargets.cmake
+    ConsoleUtilsTargets.cmake
   NAMESPACE
   ConsoleUtils::
   DESTINATION
