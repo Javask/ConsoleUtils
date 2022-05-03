@@ -49,4 +49,6 @@ Define a new command with the ConsoleCommand struct.
 - Make help and exit cli commands un overwriteable
 - Add command aliasing to cli
 - Add capability to distinguish multiple patterns for a command and call different callbacks depending
+- Make param parser optionals capable of containing multiples main options
+- Add either or to main options
 
