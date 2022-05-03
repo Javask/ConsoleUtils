@@ -1,5 +1,5 @@
 #include "PatternTokenizer.h"
-#include "StringUtils.h"
+#include <Utilities/StringUtils.h>
 #include "TokenUtils.h"
 #include <stdexcept>
 
@@ -8,7 +8,7 @@ namespace ConsoleUtils {
 std::vector<PatternToken> PatternTokenizer::tokenize(
     const std::string& pattern) {
   auto outVector = std::vector<PatternToken>();
-  auto splits = splitAtSpaces(pattern);
+  auto splits = Utilities::splitAtSpaces(pattern);
 
   bool inOptional = false;
   PatternToken* previousToken = nullptr;
@@ -18,9 +18,9 @@ std::vector<PatternToken> PatternTokenizer::tokenize(
 
     // Check if we start a segment and remove braces
     auto startOptional = (split[0] == '[');
-    if (startOptional) split = removeFirstChar(split);
+    if (startOptional) split = Utilities::removeFirstChar(split);
     auto endOptional = (split[split.size() - 1] == ']');
-    if (endOptional) split = removeLastChar(split);
+    if (endOptional) split = Utilities::removeLastChar(split);
 
     // Enforce [] consistency
     if (inOptional) {
@@ -50,7 +50,7 @@ std::vector<PatternToken> PatternTokenizer::tokenize(
           throw std::invalid_argument("Unexpected arg_type in argument " +
                                       std::to_string(i) + ".");
         }
-        split = removeFirstAndLastChar(split);
+        split = Utilities::removeFirstAndLastChar(split);
         auto argType = toArgType(split);
         if (argType == ArgType::None) {
           throw std::invalid_argument("Invalid arg_type " + split +
