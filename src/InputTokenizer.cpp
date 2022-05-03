@@ -1,5 +1,5 @@
 #include "InputTokenizer.h"
-#include "StringUtils.h"
+#include <Utilities/StringUtils.h>
 #include "TokenUtils.h"
 #include <stdexcept>
 namespace ConsoleUtils {
@@ -26,7 +26,7 @@ InputTokens InputTokenizer::tokenize(const std::vector<PatternToken>& pattern,
   auto parameters = getPatternParameters(pattern);
   auto requiredParamCounts = getMandatoryParamCounts(parameters);
   auto options = getPatternOptions(pattern);
-  auto splits = splitAtSpacesWithEscape(input);
+  auto splits = Utilities::splitAtSpacesWithEscape(input);
 
   std::string previousSplit = "";
   ArgType needsArgument = ArgType::None;
@@ -140,20 +140,20 @@ std::unordered_map<std::string, ArgType> InputTokenizer::getPatternOptions(
 }
 
 bool InputTokenizer::matchesArgType(ArgType type, std::string& split) {
-  auto toLower = toLowerCase(split);
+  auto toLower = Utilities::toLowerCase(split);
   switch (type) {
     case ArgType::None:
       return false;
     case ArgType::String:
       return true;
     case ArgType::Integer:
-      return isInteger(split);
+      return Utilities::isInteger(split);
     case ArgType::Real:
-      return isReal(split);
+      return Utilities::isReal(split);
     case ArgType::PositiveInteger:
-      return isInteger(split, false);
+      return Utilities::isInteger(split, false);
     case ArgType::PositiveReal:
-      return isReal(split, false);
+      return Utilities::isReal(split, false);
     case ArgType::Boolean:
       return toLower == "false" || toLower == "true";
     default:

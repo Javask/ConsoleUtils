@@ -1,6 +1,6 @@
 #include "ConsoleUtils/ConsoleInterface.h"
 #include <iostream>
-#include "StringUtils.h"
+#include <Utilities/StringUtils.h>
 
 ConsoleInterface::ConsoleInterface()
     : ConsoleInterface(&std::cin, &std::cout) {}
@@ -25,23 +25,23 @@ ConsoleInterface::ConsoleInterface(std::istream* in, std::ostream* out)
 }
 
 void ConsoleInterface::registerCommand(ConsoleCommand cmd) {
-  auto splits = splitAtSpacesWithEscape(cmd.pattern);
+  auto splits = Utilities::splitAtSpacesWithEscape(cmd.pattern);
   if (splits.size() != 0) cmds[splits[0]] = cmd;
 }
 
 void ConsoleInterface::unregisterCommand(std::string name) {
-  auto splits = splitAtSpacesWithEscape(name);
+  auto splits = Utilities::splitAtSpacesWithEscape(name);
   if (splits.size() != 0) cmds.erase(splits[0]);
 }
 
 void ConsoleInterface::enableCommand(std::string name) {
-  auto splits = splitAtSpacesWithEscape(name);
+  auto splits = Utilities::splitAtSpacesWithEscape(name);
   if (splits.size() != 0 && cmds.contains(splits[0]))
     cmds[splits[0]].enabled = true;
 }
 
 void ConsoleInterface::disableCommand(std::string name) {
-  auto splits = splitAtSpacesWithEscape(name);
+  auto splits = Utilities::splitAtSpacesWithEscape(name);
   if (splits.size() != 0 && cmds.contains(splits[0]))
     cmds[splits[0]].enabled = false;
 }
@@ -65,7 +65,7 @@ void ConsoleInterface::run() {
 }
 
 void ConsoleInterface::handleLine(const std::string& line) {
-  auto splits = splitAtSpacesWithEscape(line);
+  auto splits = Utilities::splitAtSpacesWithEscape(line);
   if (splits.size() != 0 && cmds.contains(splits[0])) {
     cmds[splits[0]].onExec(line, *cin, *cout);
   } else {
