@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "../ArgType.h"
+#include "ArgType.h"
 namespace ConsoleUtils {
 
 enum PatternTokenType {

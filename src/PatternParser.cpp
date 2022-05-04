@@ -1,6 +1,6 @@
 #include "PatternParser.h"
 #include <Utilities/StringUtils.h>
-#include "../TokenUtils.h"
+#include "TokenUtils.h"
 
 namespace ConsoleUtils {
 std::shared_ptr<PatternToken> PatternParser::parse(const std::string& pattern) {

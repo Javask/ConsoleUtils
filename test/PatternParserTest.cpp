@@ -1,5 +1,5 @@
 #include <catch2/catch.hpp>
-#include "ParamPattern/PatternParser.h"
+#include "PatternParser.h"
 using namespace ConsoleUtils;
 TEST_CASE("Pattern Parser works") {
   REQUIRE_THROWS(PatternParser::parse(""));
