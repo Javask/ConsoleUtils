@@ -1,22 +1,5 @@
 #include "TokenUtils.h"
 #include <catch2/catch.hpp>
-
-TEST_CASE("Test isOptional") {
-  REQUIRE(!isOptional("test"));
-  REQUIRE(!isOptional("[]"));
-  REQUIRE(isOptional("[test]"));
-  REQUIRE(isOptional("[--test]"));
-}
-
-TEST_CASE("Test option") {
-  REQUIRE(!isOption("test"));
-  REQUIRE(isOption("-test"));
-  REQUIRE(isOption("--test"));
-  REQUIRE(isOption("---test"));
-  REQUIRE(!isOption("---"));
-  REQUIRE(!isOption("-"));
-}
-
 TEST_CASE("Test isArgType") {
   REQUIRE(!isArgType("test"));
   REQUIRE(!isArgType("<test"));
