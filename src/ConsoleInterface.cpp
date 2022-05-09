@@ -1,7 +1,7 @@
 #include "ConsoleUtils/ConsoleInterface.h"
 #include <iostream>
 #include <Utilities/StringUtils.h>
-
+namespace ConsoleUtils {
 ConsoleInterface::ConsoleInterface()
     : ConsoleInterface(&std::cin, &std::cout) {}
 
@@ -96,3 +96,4 @@ void ConsoleInterface::handleExit() {
   *cout << "Exiting...\n";
   exit.store(true);
 }
+}  // namespace ConsoleUtils

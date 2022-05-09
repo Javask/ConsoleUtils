@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 #include <atomic>
-
+namespace ConsoleUtils {
 struct ConsoleCommand {
   std::string pattern;
   std::string helpDescription;
@@ -38,3 +38,4 @@ class ConsoleInterface {
   std::atomic_bool exit = false;
   std::map<std::string, ConsoleCommand> cmds;
 };
+}  // namespace ConsoleUtils

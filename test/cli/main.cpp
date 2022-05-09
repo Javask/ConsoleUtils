@@ -1,5 +1,6 @@
 #include "ConsoleUtils/ConsoleInterface.h"
 
+using namespace ConsoleUtils;
 int main(void) {
   ConsoleInterface cli;
   ConsoleCommand cmd;
