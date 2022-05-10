@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include "TokenUtils.h"
-#include "Discovery.h"
+#include <Utilities/FileUtils.h>
 
 namespace ConsoleUtils {
 
@@ -53,7 +53,7 @@ void ParamParser::printException(std::exception& e) {
 
 void ParamParser::printHelp() {
   if (console) {
-    auto arg0 = Discovery::getExecutablePath().filename().generic_string();
+    auto arg0 = Utilities::getExecutablePath().filename().generic_string();
     *console << "Usage: " << arg0 << " " << pattern;
     size_t optionNameLength = 0;
     size_t paramNameLength = 0;
