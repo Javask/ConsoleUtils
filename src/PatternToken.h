@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "ArgType.h"
+#include "ConsoleUtils/ArgType.h"
 
 namespace ConsoleUtils {
 
