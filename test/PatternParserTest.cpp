@@ -66,4 +66,12 @@ TEST_CASE("Pattern Parser works") {
     REQUIRE(valPtr);
     REQUIRE(valPtr->getName() == "test");
   }
+  REQUIRE_NOTHROW(tokenPtr = PatternParser::parse("[test|test]"));
+  REQUIRE(tokenPtr->getType() == PatternTokenType::OPTIONAL);
+  {
+    auto valPtr = std::dynamic_pointer_cast<OptionalToken>(tokenPtr);
+    REQUIRE(valPtr);
+    REQUIRE(valPtr->getChildren().size() == 1);
+    REQUIRE(valPtr->getChildren()[0]->getType() == OR);
+  }
 }

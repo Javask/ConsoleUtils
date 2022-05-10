@@ -11,6 +11,9 @@ ParentToken::ParentToken(PatternTokenType type,
 std::vector<std::shared_ptr<PatternToken>> ParentToken::getChildren() const {
   return children;
 }
+void ParentToken::addChild(std::shared_ptr<PatternToken> child) {
+  children.push_back(child);
+}
 
 NamedToken::NamedToken(PatternTokenType type, std::string name)
     : PatternToken(type), name(name) {}

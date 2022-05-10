@@ -1,266 +1,347 @@
 #include "PatternParser.h"
 #include <Utilities/StringUtils.h>
 #include "TokenUtils.h"
+#include <algorithm>
 
 namespace ConsoleUtils {
-std::shared_ptr<PatternToken> PatternParser::parse(const std::string& pattern) {
-  std::string trimmed = pattern;
-  trimmed.erase(trimmed.find_last_not_of(' ') + 1);
-  trimmed.erase(0, trimmed.find_first_not_of(' '));
-
-  if (isOption(trimmed)) {
-    auto pair = getOptionNameAndArgType(trimmed);
-    return std::make_shared<OptionToken>(pair.first, pair.second);
-
-  } else if (isValue(trimmed)) {
-    auto name = getValueName(trimmed);
-    return std::make_shared<ValueToken>(name);
-
-  } else if (isMultiple(trimmed)) {
-    auto name = getMultipleName(trimmed);
-    return std::make_shared<MultipleToken>(name);
-
-  } else if (isOrder(trimmed)) {
-    auto splits = splitOrder(trimmed);
-    std::vector<std::shared_ptr<PatternToken>> children;
-    children.reserve(splits.size());
-    for (auto& split : splits) {
-      children.push_back(parse(split));
-    }
-    return std::make_shared<OrderToken>(children);
-
-  } else if (isOr(trimmed)) {
-    auto splits = splitOr(trimmed);
-    std::vector<std::shared_ptr<PatternToken>> children;
-    children.reserve(splits.size());
-    for (auto& split : splits) {
-      children.push_back(parse(split));
-    }
-    return std::make_shared<OrToken>(children);
-
-  } else if (isOptional(trimmed)) {
-    auto splits = splitOptional(trimmed);
-    std::vector<std::shared_ptr<PatternToken>> children;
-    children.reserve(splits.size());
-    for (auto& split : splits) {
-      children.push_back(parse(split));
-    }
-    return std::make_shared<OptionalToken>(children);
+PatternTokenType toPatternTokenType(LayerType type) {
+  switch (type) {
+    case LayerType::Optional:
+      return OPTIONAL;
+    case LayerType::Or:
+      return OR;
+    case LayerType::Order:
+      return ORDER;
   }
+}
+
+PatternTokenType toPatternTokenType(StringPartType type) {
+  switch (type) {
+    case StringPartType::ArgType:
+    case StringPartType::Multiple:
+      throw std::invalid_argument(
+          "ArgTypes and Multiples should have been removed by this point!");
+    case StringPartType::Option:
+      return OPTION;
+    case StringPartType::Value:
+      return VALUE;
+  }
+}
+
+std::shared_ptr<PatternToken> PatternParser::parse(const std::string& pattern) {
+  LoopState state;
+  state.handle(pattern);
+
   throw std::invalid_argument("Could not parse pattern \"" + pattern + "\"");
 }
 
-std::vector<std::string> PatternParser::splitOptional(
-    const std::string& pattern) {
-  return {Utilities::removeFirstAndLastChar(pattern)};
+const std::vector<std::vector<PatternTokenType>> LoopState::getCharInfo()
+    const {
+  return charInfo;
 }
 
-std::vector<std::string> PatternParser::splitOrder(const std::string& pattern) {
-  bool inStringDouble = false;
-  bool inStringSingle = false;
-  size_t optionalLevel = 0;
-  std::vector<size_t> splitPoints;
+bool LoopState::inStringPart(StringPartType type) {
+  return !stringParts.empty() && (stringParts.back().type == type);
+}
+
+bool LoopState::inValue() { return inStringPart(StringPartType::Value); }
+bool LoopState::inOption() { return inStringPart(StringPartType::Option); }
+bool LoopState::inArgType() { return inStringPart(StringPartType::ArgType); }
+bool LoopState::inMultiple() { return inStringPart(StringPartType::Multiple); }
+
+void LoopState::addLayer(LayerType type, size_t start) {
+  LayerInfo newLayer = {};
+  newLayer.type = type;
+  newLayer.start = start;
+  if (!currLayerId.empty()) newLayer.parent = currLayerId.top();
+  size_t id = layers.size();
+  layers.push_back(newLayer);
+  currLayerId.push(id);
+}
+void LoopState::addLayerOptional(size_t start) {
+  addLayer(LayerType::Optional, start);
+}
+void LoopState::addLayerBrackets(size_t start) {
+  addLayer(LayerType::Order, start);
+}
+
+void LoopState::insertOrLayer(size_t pos) {
+  auto oldId = currLayerId.top();
+  auto& oldLayer = layers[oldId];
+  oldLayer.end = pos;
+  currLayerId.pop();
+
+  if (oldLayer.parent == -1 || layers[oldLayer.parent].type != LayerType::Or) {
+    auto newId = layers.size();
+    LayerInfo newLayer = {};
+    newLayer.type = LayerType::Or;
+    newLayer.parent = oldLayer.parent;
+    oldLayer.parent = newId;
+    newLayer.start = oldLayer.start;
+    layers.push_back(newLayer);
+    currLayerId.push(newId);
+  }
+  addLayer(LayerType::Order, pos);
+}
+
+void LoopState::endLayer(LayerType type, size_t end) {
+  if (currLayerId.empty()) {
+    throw std::invalid_argument(
+        "Found closing bracked without matching opening bracket!");
+  }
+  auto currId = currLayerId.top();
+  if (layers[currId].type != type) {
+    throw std::invalid_argument("Invalid combination of brackets!");
+  }
+  layers[currId].end = end;
+  currLayerId.pop();
+
+  auto parentId = layers[currId].parent;
+  if (parentId != -1) {
+    auto& parentLayer = layers[parentId];
+    if (parentLayer.type == LayerType::Or) {
+      endLayer(LayerType::Or, end);
+    }
+  }
+}
+void LoopState::endLayerOptional(size_t end) {
+  endLayer(LayerType::Optional, end);
+}
+void LoopState::endLayerBrackets(size_t end) {
+  endLayer(LayerType::Order, end);
+}
+
+void LoopState::beginStringPart(StringPartType type, size_t start) {
+  size_t id = stringParts.size();
+  StringPartInfo sInfo = {};
+  sInfo.type = type;
+  sInfo.start = start;
+  if (!currLayerId.empty()) {
+    sInfo.layer = currLayerId.top();
+    layers[currLayerId.top()].stringPartIds.push_back(id);
+  }
+  stringParts.push_back(sInfo);
+  currStringPartId.push(id);
+}
+void LoopState::beginValue(size_t start) {
+  beginStringPart(StringPartType::Value, start);
+}
+void LoopState::beginOption(size_t start) {
+  beginStringPart(StringPartType::Option, start);
+}
+void LoopState::beginArgType(size_t start) {
+  beginStringPart(StringPartType::ArgType, start);
+}
+void LoopState::beginMultiple(size_t start) {
+  beginStringPart(StringPartType::Multiple, start);
+}
+
+void LoopState::endStringPart(StringPartType type, size_t end) {
+  auto currId = currStringPartId.top();
+  if (stringParts[currId].type != type) {
+    throw std::invalid_argument("Invalid pattern!");
+  }
+  stringParts[currId].end = end;
+  currStringPartId.pop();
+}
+void LoopState::endValue(size_t end) {
+  endStringPart(StringPartType::Value, end);
+}
+void LoopState::endOption(size_t end) {
+  endStringPart(StringPartType::Option, end);
+}
+void LoopState::endArgType(size_t end) {
+  endStringPart(StringPartType::ArgType, end);
+}
+void LoopState::endMultiple(size_t end) {
+  endStringPart(StringPartType::Multiple, end);
+}
+
+void LoopState::endStringPartNotArgType(size_t end) {
+  auto currId = currStringPartId.top();
+  if (stringParts[currId].type == StringPartType::ArgType) {
+    throw std::invalid_argument("Invalid pattern!");
+  }
+  stringParts[currId].end = end;
+  currStringPartId.pop();
+}
+void LoopState::handleTokenEnd(const std::string&, size_t i) {
+  endStringPartNotArgType(i);
+}
+
+void LoopState::checkSpace(const std::string& pattern, size_t i) {
+  if (pattern[i] == ' ' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    lastSpace = (int64_t)i;
+  }
+}
+
+void LoopState::checkEscape(const std::string& pattern, size_t i) {
+  if (pattern[i] == '\\' && !wasEscape) {
+    lastEscape = (int64_t)i;
+  }
+}
+
+void LoopState::checkOptional(const std::string& pattern, size_t i) {
+  if (pattern[i] == '[' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    addLayerOptional(i);
+  } else if (pattern[i] == ']' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    endLayerOptional(i);
+  }
+}
+void LoopState::checkBrackets(const std::string& pattern, size_t i) {
+  if (pattern[i] == '(' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    addLayerBrackets(i);
+  } else if (pattern[i] == ')' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    endLayerBrackets(i);
+  }
+}
+
+void LoopState::checkOr(const std::string& pattern, size_t i) {
+  if (pattern[i] == '|' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    addLayerBrackets(i);
+  } else if (pattern[i] == ')' && !wasEscape) {
+    handleTokenEnd(pattern, i);
+    endLayerBrackets(i);
+  }
+}
+
+void LoopState::checkValue(const std::string& pattern, size_t i) {
+  if (pattern[i] == ' ' || pattern[i] == '[' || pattern[i] == ']' ||
+      pattern[i] == '(' || pattern[i] == ')' || pattern[i] == '\'' ||
+      pattern[i] == '\"')
+    return;
+  if (inValue() || inOption() || inArgType()) return;
+  if (pattern[i] != '-' && pattern[i] != '<') {
+    beginValue(i);
+  }
+}
+void LoopState::checkOption(const std::string& pattern, size_t i) {
+  if (pattern[i] == ' ' || pattern[i] == '[' || pattern[i] == ']' ||
+      pattern[i] == '(' || pattern[i] == ')' || pattern[i] == '\'' ||
+      pattern[i] == '\"')
+    return;
+  if (inValue() || inOption() || inArgType()) return;
+  if (pattern[i] == '-' && pattern[i] != '<') {
+    beginOption(i);
+  }
+}
+
+void LoopState::checkArgType(const std::string& pattern, size_t i) {
+  if (inValue() || inOption() || inArgType()) return;
+  if (pattern[i] == '<') {
+    beginArgType(i);
+  } else if (pattern[i] != '>') {
+    endArgType(i);
+  }
+}
+
+void LoopState::handle(const std::string& pattern) {
+  if (pattern.size() == 0) return;
+
   for (size_t i = 0; i < pattern.size(); i++) {
-    if (pattern[i] == '[' && !inStringDouble && !inStringSingle) {
-      optionalLevel++;
-    } else if (pattern[i] == ']' && !inStringDouble && !inStringSingle) {
-      if (optionalLevel == 0) {
-        throw std::invalid_argument("Unbalanced number or [] in pattern!");
-      }
-      optionalLevel--;
-    } else if (pattern[i] == '\"' && !inStringSingle) {
-      inStringDouble = !inStringDouble;
-    } else if (pattern[i] == '\'' && !inStringDouble) {
-      inStringSingle = !inStringSingle;
-    } else if (pattern[i] == ' ' && !inStringDouble && !inStringSingle &&
-               optionalLevel == 0) {
-      splitPoints.push_back(i);
-    }
+    wasEscape = (lastEscape != -1 && (int64_t)i - 1 == lastEscape);
+    wasSpace = (lastSpace != -1 && (int64_t)i - 1 == lastSpace);
+    checkSpace(pattern, i);
+    checkEscape(pattern, i);
+    checkOptional(pattern, i);
+    checkBrackets(pattern, i);
+    checkValue(pattern, i);
+    checkOption(pattern, i);
+    checkArgType(pattern, i);
+    checkOr(pattern, i);
   }
-  auto splits = splitAtIndices(pattern, splitPoints);
-  if (splits.size() < 2) return splits;
-
-  std::vector<std::string> splitsCleaned;
-  splitsCleaned.reserve(splits.size());
-
-  bool lastSkipped = false;
-  for (size_t i = 1; i < splits.size(); i++) {
-    lastSkipped = false;
-    auto toTest = splits[i - 1] + " " + splits[i];
-    if (isMultiple(toTest) || isOption(toTest)) {
-      splitsCleaned.push_back(toTest);
-      lastSkipped = true;
-    } else {
-      splitsCleaned.push_back(splits[i - 1]);
-    }
-  }
-  if (!lastSkipped) splitsCleaned.push_back(splits[splits.size() - 1]);
-  return splitsCleaned;
+  fixMultipleAndArgType();
+  setupCharInfo(pattern);
 }
 
-std::vector<std::string> PatternParser::splitOr(const std::string& pattern) {
-  bool inStringDouble = false;
-  bool inStringSingle = false;
-  size_t optionalLevel = 0;
-  std::vector<size_t> splitPoints;
-  for (size_t i = 0; i < pattern.size(); i++) {
-    if (pattern[i] == '[' && !inStringDouble && !inStringSingle) {
-      optionalLevel++;
-    } else if (pattern[i] == ']' && !inStringDouble && !inStringSingle) {
-      if (optionalLevel == 0) {
-        throw std::invalid_argument("Unbalanced number or [] in pattern!");
+void LoopState::setupCharInfo(const std::string& pattern) {
+  charInfo.clear();
+  charInfo.resize(pattern.size());
+  for (size_t j = 0; j < stringParts.size(); j++) {
+    auto& currPart = stringParts[j];
+    std::stack<PatternTokenType> typeHierarchy;
+    typeHierarchy.push(toPatternTokenType(currPart.type));
+    if (currPart.layer != -1) {
+      auto& currLayer = layers[currPart.layer];
+      typeHierarchy.push(toPatternTokenType(currLayer.type));
+      while (currLayer.parent != -1) {
+        currLayer = layers[currLayer.parent];
+        typeHierarchy.push(toPatternTokenType(currLayer.type));
       }
-      optionalLevel--;
-    } else if (pattern[i] == '\"' && !inStringSingle) {
-      inStringDouble = !inStringDouble;
-    } else if (pattern[i] == '\'' && !inStringDouble) {
-      inStringSingle = !inStringSingle;
-    } else if (pattern[i] == '|' && !inStringDouble && !inStringSingle &&
-               optionalLevel == 0) {
-      splitPoints.push_back(i);
     }
-  }
-  auto splits = splitAtIndices(pattern, splitPoints);
-  for (size_t i = 1; i < splits.size(); i++) {
-    splits[i] = splits[i].substr(1);
-  }
-  return splits;
-}
-
-std::vector<std::string> PatternParser::splitAtIndices(
-    const std::string& pattern, const std::vector<size_t> splitPoints) {
-  std::vector<std::string> splits;
-  splits.reserve(splitPoints.size() + 1);
-  for (size_t i = 0; i <= splitPoints.size(); i++) {  // Intentional
-    size_t start = 0, end = pattern.size();
-    if (i != 0) {
-      start = splitPoints[i - 1];
-    } else if (i != pattern.size()) {
-      end = splitPoints[i];
-    }
-    if (start != end) {
-      splits.push_back(pattern.substr(start, end - start));
-    }
-  }
-  return splits;
-}
-
-bool PatternParser::isOptional(const std::string& pattern) {
-  if (pattern.size() < 3) return false;
-
-  bool inStringDouble = false;
-  bool inStringSingle = false;
-  size_t optionalLevel = 0;
-  int64_t optionalStart = -1;
-  int64_t optionalEnd = -1;
-  for (size_t i = 0; i < pattern.size(); i++) {
-    if (pattern[i] == '[' && !inStringDouble && !inStringSingle) {
-      if (optionalLevel == 0) {
-        optionalStart = i;
-      }
-      optionalLevel++;
-    } else if (pattern[i] == ']' && !inStringDouble && !inStringSingle) {
-      if (optionalLevel == 0) {
-        throw std::invalid_argument("Unbalanced number or [] in pattern!");
-      }
-      optionalLevel--;
-      if (optionalLevel == 0) {
-        optionalEnd = i;
-        break;
+    int64_t start = currPart.start, end = currPart.end;
+    if (start == -1) start = 0;
+    if (end == -1) end = pattern.size() - 1;
+    while (!typeHierarchy.empty()) {
+      auto topType = typeHierarchy.top();
+      typeHierarchy.pop();
+      for (int64_t i = start; i <= end; i++) {
+        charInfo[i].push_back(topType);
       }
     }
   }
-
-  if (inStringDouble) {
-    throw std::invalid_argument("Unbalanced number or \" in pattern!");
-  } else if (inStringSingle) {
-    throw std::invalid_argument("Unbalanced number or \' in pattern!");
-  }
-  return optionalStart == 0 &&
-         optionalEnd == static_cast<int64_t>(pattern.size()) - 1;
 }
 
-bool PatternParser::isOption(const std::string& pattern) {
-  auto splits = Utilities::splitAtSpacesWithEscape(pattern);
-  if (splits.empty()) return false;
+void LoopState::fixMultipleAndArgType() {
+  std::stack<size_t> toRemove;
+  for (size_t i = 0; i < stringParts.size(); i++) {
+    auto& currPart = stringParts[i];
+    if (currPart.type != StringPartType::ArgType &&
+        currPart.type != StringPartType::Multiple)
+      continue;
 
-  if (splits.size() > 2) return false;
-  if (!isValidOptionName(splits[0])) return false;
-  if (splits.size() == 2 && !isArgType(splits[1])) return false;
-  return true;
-}
-bool PatternParser::isOrder(const std::string& pattern) {
-  auto splits = Utilities::splitAtSpacesWithEscape(pattern);
-  if (splits.size() <= 1) return false;
-  if (splits.size() == 2) {
-    if (splits[1] == "...") return false;
-    if (isArgType(splits[1])) return false;
-  }
-  return (!isOr(pattern) && !isOptional(pattern));
-}
-
-bool PatternParser::isOr(const std::string& pattern) {
-  bool inOptional = false;
-  bool inStringDouble = false;
-  bool inStringSingle = false;
-  for (size_t i = 0; i < pattern.size(); i++) {
-    if (pattern[i] == '[' && !inOptional && !inStringDouble &&
-        !inStringSingle) {
-      inOptional = true;
-    } else if (pattern[i] == ']' && inOptional && !inStringDouble &&
-               !inStringSingle) {
-      inOptional = false;
-    } else if (pattern[i] == '\"' && !inOptional && !inStringSingle) {
-      inStringDouble = !inStringDouble;
-    } else if (pattern[i] == '\'' && !inOptional && !inStringDouble) {
-      inStringSingle = !inStringSingle;
-    } else if (pattern[i] == '|' && !inOptional && !inStringDouble &&
-               !inStringSingle) {
-      return true;
+    StringPartInfo* beforePart = nullptr;
+    for (size_t j = 0; j < stringParts.size(); j++) {
+      if (j == i) continue;
+      if (stringParts[j].layer != currPart.layer) continue;
+      if (stringParts[j].end == currPart.start) {
+        if (beforePart != nullptr ||
+            (stringParts[j].type != StringPartType::Option &&
+             currPart.type == StringPartType::ArgType) ||
+            (stringParts[j].type != StringPartType::Value &&
+             currPart.type == StringPartType::Multiple)) {
+          throw std::invalid_argument("Found misplaced argtype/multiple!");
+        }
+        beforePart = &stringParts[j];
+      }
     }
+    if (!beforePart) {
+      throw std::invalid_argument("Found misplaced argtype/multiple!");
+    }
+    beforePart->end = currPart.end;
+    beforePart->containsMultiple = (currPart.type == StringPartType::Multiple);
+    beforePart->containsArgType = (currPart.type == StringPartType::ArgType);
+    toRemove.push(i);
   }
-  if (inOptional) {
-    throw std::invalid_argument("Unbalanced number or [] in pattern!");
-  } else if (inStringDouble) {
-    throw std::invalid_argument("Unbalanced number or \" in pattern!");
-  } else if (inStringSingle) {
-    throw std::invalid_argument("Unbalanced number or \' in pattern!");
+  while (!toRemove.empty()) {
+    size_t currRemove = toRemove.top();
+    toRemove.pop();
+
+    auto layerId = stringParts[currRemove].layer;
+    if (layerId != -1) {
+      std::remove_if(layers[layerId].stringPartIds.begin(),
+                     layers[layerId].stringPartIds.end(),
+                     [currRemove](size_t id) { return id == currRemove; });
+    }
+    stringParts.erase(stringParts.begin() + currRemove);
   }
-  return false;
-}
-bool PatternParser::isValue(const std::string& pattern) {
-  auto splits = Utilities::splitAtSpacesWithEscape(pattern);
-  if (splits.empty()) return false;
-  if (splits.size() >= 2) return false;
-  if (!isValidParamName(splits[0])) return false;
-  if (splits.size() == 2 && splits[1] != "...") return false;
-  return true;
 }
 
-bool PatternParser::isMultiple(const std::string& pattern) {
-  auto splits = Utilities::splitAtSpacesWithEscape(pattern);
-  if (splits.size() != 2) return false;
-  if (!isValidParamName(splits[0]) || splits[1] != "...") return false;
-  return true;
+void LoopState::reset() {
+  wasEscape = false;
+  wasSpace = false;
+  lastSpace = -1;
+  lastEscape = -1;
+  currLayerId = std::stack<size_t>();
+  currStringPartId = std::stack<size_t>();
+  stringParts.clear();
+  layers.clear();
+  charInfo.clear();
 }
-
-std::string PatternParser::getValueName(const std::string& pattern) {
-  return Utilities::splitAtSpacesWithEscape(pattern)[0];
-}
-
-std::pair<std::string, ArgType> PatternParser::getOptionNameAndArgType(
-    const std::string& pattern) {
-  ArgType out = ArgType::None;
-  auto splits = Utilities::splitAtSpacesWithEscape(pattern);
-  if (splits.size() == 2) {
-    auto argType = Utilities::removeFirstAndLastChar(splits[1]);
-    out = toArgType(argType);
-  }
-  return {splits[0], out};
-}
-
-std::string PatternParser::getMultipleName(const std::string& pattern) {
-  return Utilities::splitAtSpacesWithEscape(pattern)[0];
-}
-
 }  // namespace ConsoleUtils

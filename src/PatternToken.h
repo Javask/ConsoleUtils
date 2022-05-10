@@ -44,6 +44,7 @@ class ParentToken : public PatternToken {
 
  public:
   ~ParentToken() = default;
+  void addChild(std::shared_ptr<PatternToken> child);
   std::vector<std::shared_ptr<PatternToken>> getChildren() const;
 
  private:
