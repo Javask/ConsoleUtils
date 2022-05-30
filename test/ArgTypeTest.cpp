@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include "ConsoleUtils/ArgType.h"
 using namespace ConsoleUtils;
 TEST_CASE("String to arg_type conversion") {

@@ -34,7 +34,7 @@ CPMAddPackage(NAME Utilities
                 "UTILITIES_BUILD_TESTS OFF")
 
 file(GLOB_RECURSE CONSOLEUTILS_SOURCE_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
-add_library(ConsoleUtils STATIC ${CONSOLEUTILS_SOURCE_FILES})
+add_library(ConsoleUtils OBJECT ${CONSOLEUTILS_SOURCE_FILES})
 set_target_properties(ConsoleUtils PROPERTIES CXX_STANDARD 20 COMPILE_OPTIONS "${CONSOLEUTILS_CXX_FLAGS}")
 target_link_libraries(ConsoleUtils Utilities::Utilities)
 if(UNIX)
